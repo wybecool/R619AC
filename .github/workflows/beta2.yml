@@ -177,11 +177,11 @@ jobs:
 
         ⏱️ 编译时间: $(date +"%Y年%m月%d日%H时%M分")
 
-        🌐 管理地址: 192.168.1.1
+        🌐 管理地址: 10.0.0.1
 
         👤 用户名: root
 
-        🔒 密码: password 
+        🔒 密码: wayne 
 
         🚧 软件包-配置opkg-填入以下源(更新不可描述和upnp修复不可用等问题)
         src/gz openwrt_kiddin9 https://dl.openwrt.ai/latest/packages/arm_cortex-a7_neon-vfpv4/kiddin9
