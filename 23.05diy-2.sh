@@ -32,7 +32,7 @@ curl -sfL https://github.com/leesuncom/R619AC/raw/master/patch/mosdns -o package
 sed -i 's/192.168.1.1/10.0.0.1/g' package/base-files/files/bin/config_generate
 # rm -rf feeds/kiddin9/{base-files,dnsmasq,firewall*,fullconenat,libnftnl,nftables,ppp,opkg,ucl,upx,vsftpd*,miniupnpd-iptables,wireless-regdb}
  git clone https://github.com/sbwml/luci-app-mosdns -b v5 feeds/luci/applications/luci-app-mosdns
- git clone https://github.com/xuanranran/openwrt-package/luci-app-adguardhome feeds/luci/applications/luci-app-adguardhome
+ git clone https://github.com/xuanranran/openwrt-package feeds/luci/applications/luci-app-adguardhome
 
 #find ./ | grep Makefile | grep adguardhome | xargs rm -f
 #find ./ | grep Makefile | grep mosdns | xargs rm -f
