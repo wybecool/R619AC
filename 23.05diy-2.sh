@@ -23,7 +23,7 @@ curl -sfL https://github.com/leesuncom/R619AC/raw/master/patch/mosdns -o package
 # sed -i 's/ImmortalWrt/NeoBird/g' ./package/base-files/files/bin/config_generate
 
 # 去除默认bootstrap主题
-sed -i 's/[b|B]ootstrap/argon/g' ./feeds/luci/collections/luci/Makefile
+#sed -i 's/[b|B]ootstrap/argon/g' ./feeds/luci/collections/luci/Makefile
 
 # echo "修改wifi名称"
 # sed -i "s/OpenWrt/$wifi_name/g" package/kernel/mac80211/files/lib/wifi/mac80211.sh
