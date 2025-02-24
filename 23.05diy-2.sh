@@ -37,4 +37,4 @@ sed -i 's/192.168.1.1/10.0.0.1/g' package/base-files/files/bin/config_generate
 find ./ | grep Makefile | grep adguardhome | xargs rm -f
 find ./ | grep Makefile | grep mosdns | xargs rm -f
 git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
-git clone https://github.com/xuanranran/openwrt-package package/adguardhome
+git clone https://github.com/kiddin9/openwrt-adguardhome package/adguardhome
