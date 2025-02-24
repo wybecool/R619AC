@@ -21,7 +21,7 @@ on:
     types: [started]
 env:
   REPO_URL: https://github.com/Lienol/openwrt
-  REPO_BRANCH: master
+  REPO_BRANCH: main
   FEEDS_CONF: feeds.conf.default
   CONFIG_FILE: a.config
   DIY_P1_SH: 23.05diy-1.sh
