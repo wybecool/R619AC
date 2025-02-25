@@ -38,4 +38,4 @@ sed -i 's/192.168.1.1/10.0.0.1/g' package/base-files/files/bin/config_generate
 find ./ | grep Makefile | grep mosdns | xargs rm -f
 git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
 #git clone https://github.com/kiddin9/openwrt-adguardhome package/adguardhome
-#sed -i '$a src-git kiddin9 https://github.com/kiddin9/kwrt-packages.git' feeds.conf.default
+sed -i '$a src-git kiddin9 https://github.com/kiddin9/kwrt-packages.git' feeds.conf.default
