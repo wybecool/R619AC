@@ -1,3 +1,4 @@
+
 #
 # Copyright (c) 2019-2020 P3TERX <https://p3terx.com>
 #
@@ -8,319 +9,177 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: Build R619AC-IMM23.05-k9
-
+name: Build R619AC-IMM23.05-IM
 on:
   repository_dispatch:
   workflow_dispatch:
     inputs:
       ssh:
-        description: 'SSH connection to Actions'
+        description: 'Debugging with tmate'
         required: false
         default: 'false'
   watch:
     types: [started]
-    
 env:
-  REPO_URL: https://github.com/openwrt/openwrt
-  REPO_BRANCH: openwrt-23.05
-  UPLOAD_BIN_DIR: true
+  REPO_URL: https://github.com/VIKINGYFY/immortalwrt
+  REPO_BRANCH: main
+  FEEDS_CONF: feeds.conf.default
+  CONFIG_FILE: a.config
+  DIY_P1_SH: 23.05diy-1.sh
+  DIY_P2_SH: 23.05diy-2.sh
+  UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
+  UPLOAD_COWTRANSFER: false
+  UPLOAD_WETRANSFER: true
   UPLOAD_RELEASE: true
-  TZ: Asia/Shanghai
+  TZ: Asia/Ho_Chi_Minh
+  GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  # custom_99: 99-network-custom.sh
 
 jobs:
   build:
-    runs-on: Ubuntu-20.04
-#     if: github.event.repository.owner.id == github.event.sender.id
-    
+    runs-on: ubuntu-20.04
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@main
+      - name: Checkout
+        uses: actions/checkout@main
 
-    - name: Initialization environment
-      env:
-        DEBIAN_FRONTEND: noninteractive
-      run: |
-        sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
-        sudo -E apt-get -qq update
-        sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-2004)
-        sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler
-        sudo -E apt-get -qq install -y build-essential cmake asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib g++-multilib p7zip p7zip-full msmtp libssl-dev texinfo libreadline-dev libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint ccache curl wget vim nano python2.7 python3 python3-pip python3-ply haveged lrzsz device-tree-compiler scons antlr3 gperf intltool mkisofs rsync ecj fastjar file g++ java-propose-classpath libncursesw5-dev python python3-distutils python3-setuptools swig time xsltproc
+      - name: Initialization environment
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          sudo -E apt-get -qq update
+          sudo -E apt-get -qq install $(curl -fsSL git.io/depends-ubuntu-2004)
+          sudo -E apt-get -y install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler
+          sudo -E apt-get -qq install -y build-essential cmake asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib g++-multilib p7zip p7zip-full msmtp libssl-dev texinfo libreadline-dev libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint ccache curl wget vim nano python2.7 python3 python3-pip python3-ply haveged lrzsz device-tree-compiler scons antlr3 gperf intltool mkisofs rsync ecj fastjar file g++ java-propose-classpath libncursesw5-dev python python3-distutils python3-setuptools swig time xsltproc
         
-        sudo -E apt-get -qq autoremove --purge
-        sudo -E apt-get -qq clean
-        sudo timedatectl set-timezone "$TZ"
-        sudo mkdir -p /workdir
-        sudo chown $USER:$GROUPS /workdir
+          sudo -E apt-get -qq autoremove --purge
+          sudo -E apt-get -qq clean
+          sudo timedatectl set-timezone "$TZ"
+          sudo mkdir -p /workdir
+          sudo chown $USER:$GROUPS /workdir
 
-    - name: Clone source code
-      working-directory: /workdir
-      run: |
-        df -hT $PWD
-        git clone $REPO_URL -b $REPO_BRANCH openwrt
-        ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
-        cd openwrt
-        # sed -i '$a src-git kiddin9 https://github.com/kiddin9/openwrt-packages.git' feeds.conf.default
-        sed -i '$a src-git kiddin9 https://github.com/kiddin9/openwrt-packages.git;master' feeds.conf.default
-        sed -i "/telephony/d" feeds.conf.default
-        sed -i "s?targets/%S/packages?targets/%S/\$(LINUX_VERSION)?" include/feeds.mk
-        sed -i '/	refresh_config();/d' scripts/feeds
-        ./scripts/feeds update -a
-        ./scripts/feeds install -a
-        useVersionInfo=$(git show -s --date=short --format="Author: %an<br/>date: %cd<br/>commit: %s<br/>commit hash: %H<br/>")
-        echo "useVersionInfo=$useVersionInfo" >> $GITHUB_ENV
+      - name: Clone source code
+        working-directory: /workdir
+        run: |
+          df -hT $PWD
+          git clone $REPO_URL -b $REPO_BRANCH openwrt
+          ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
 
-    - name: Cache
-      uses: klever1988/cachewrtbuild@main
-      with:
-        ccache: 'true'
-        prefix: ${{ github.workspace }}/openwrt
+      - name: Load custom feeds
+        run: |
+          [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
+          chmod +x $DIY_P1_SH && sed -i -e 's/\r$//' $GITHUB_WORKSPACE/$DIY_P1_SH
+          # mkdir -p openwrt/files/etc/uci-defaults
+          # mv $custom_99 openwrt/files/etc/uci-defaults/99-custom
+          cd openwrt
+          $GITHUB_WORKSPACE/$DIY_P1_SH
+          #git fetch origin --tags
+          #git describe --tags $(git rev-list --tags --max-count=1) > immortalwrt_version
+          #git checkout -f $(git describe --tags $(git rev-list --tags --max-count=1))
 
-    - name: Update packages
-      env:
-        SCKEY: ${{ secrets.ACTIONS_TRIGGER_PAT }}
-      run: |
-        ls
-        cd openwrt
-        rm -rf feeds/kiddin9/{luci-app-mosdns,mosdns,luci-app-strongswan-swanctl,luci-app-tencentcloud-cos,luci-app-dnscrypt-proxy2,base-files,dnsmasq,firewall*,fullconenat,libnftnl,nftables,ppp,opkg,ucl,upx,vsftpd-alt,miniupnpd-iptables,wireless-regdb,luci-app-sms-tool,luci-app-bypass,luci-app-passwall2,luci-app-bmtedge}        
-        rm -rf feeds/packages/net/v2ray-geodata
-        git clone https://github.com/sbwml/luci-app-mosdns -b v5 package/mosdns
-        git clone https://github.com/sbwml/v2ray-geodata package/v2ray-geodata
+      - name: Update feeds
+        run: cd openwrt && ./scripts/feeds update -a
 
-    - name: File Patch Before
-      run: |
-        cp -f patch/rc.local openwrt/package/base-files/files/etc/rc.local
-        cd openwrt
-        # rm -rf feeds/kiddin9/{luci-app-strongswan-swanctl,luci-app-tencentcloud-cos,luci-app-dnscrypt-proxy2,base-files,dnsmasq,firewall*,fullconenat,libnftnl,nftables,ppp,opkg,ucl,upx,vsftpd-alt,miniupnpd-iptables,wireless-regdb,luci-app-sms-tool,luci-app-bypass,luci-app-passwall2,luci-app-bmtedge}        
-        curl -sfL https://github.com/leesuncom/package/raw/main/99-default-settings -o feeds/kiddin9/my-default-settings/files/etc/uci-defaults/99-default-settings        
-        #sed -i 's/^IMG_PREFIX\:\=.*/IMG_PREFIX:=$(VERSION_DIST_SANITIZED)-$(shell TZ=UTC-8 date +"%Y.%m.%d-%H%M")-$(IMG_PREFIX_VERNUM)$(IMG_PREFIX_VERCODE)$(IMG_PREFIX_EXTRA)$(BOARD)$(if $(SUBTARGET),-$(SUBTARGET))/g' include/image.mk
-        #sed '14 iuci\ commit\ network' -i package/emortal/default-settings/files/99-default-settings-chinese
-        #sed '14 iset\ network.globals.packet_steering=1' -i package/emortal/default-settings/files/99-default-settings-chinese
-        #sed '4 iset\ system.@system[0].hostname=NeoBird' -i package/emortal/default-settings/files/99-default-settings-chinese
-        sed -i 's/192.168.1.1/192.168.1.2/g' package/base-files/files/bin/config_generate
-        sed -i 's/[b|B]ootstrap/argon/g' ./feeds/luci/collections/luci/Makefile
-        
-    - name: Update feeds
-      run: cd openwrt && ./scripts/feeds update -a && ./scripts/feeds install -a
+      - name: Install feeds
+        run: cd openwrt && ./scripts/feeds install -a
 
-    - name: File Patch After
-      run: |
-          rm -rf feeds/packages/lang/golang
-          git clone https://github.com/sbwml/packages_lang_golang -b 23.x feeds/packages/lang/golang
-        # cd openwrt
-        # rm -rf feeds/kiddin9/{luci-app-strongswan-swanctl,luci-app-tencentcloud-cos,luci-app-dnscrypt-proxy2,base-files,dnsmasq,firewall*,fullconenat,libnftnl,nftables,ppp,opkg,ucl,upx,vsftpd-alt,miniupnpd-iptables,wireless-regdb,luci-app-sms-tool,luci-app-bypass,luci-app-passwall2,luci-app-bmtedge}        
+      - name: Load custom configuration
+        run: |
+          [ -e files ] && mv files openwrt/files
+          [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+          #sed -i 's/CONFIG_VERSION_NUMBER\s*=.*/CONFIG_VERSION_NUMBER=$immortalwrt_version/g' openwrt/.config
+          chmod +x $DIY_P2_SH && sed -i -e 's/\r$//' $GITHUB_WORKSPACE/$DIY_P2_SH
+          cd openwrt
+          $GITHUB_WORKSPACE/$DIY_P2_SH
 
-    - name: Generate configuration file
-      run: |
-        cd openwrt
-        rm -f ./.config*
-        touch ./.config
+      - name: SSH connection to Actions
+        uses: P3TERX/ssh2actions@v1.0.0
+        if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
+        env:
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
-        #
-        # ========================固件定制部分========================
-        # 
+      - name: Download package
+        id: package
+        run: |
+          cd openwrt
+          make defconfig
+          make download -j $(($(nproc)+1))
+          find dl -size -1024c -exec ls -l {} \;
+          find dl -size -1024c -exec rm -f {} \;
 
-        # 
-        # 如果不对本区块做出任何编辑, 则生成默认配置固件. 
-        # 
+      - name: Compile the firmware
+        id: compile
+        run: |
+          cd openwrt
+          echo -e "$(nproc) thread compile"
+          make -j $(($(nproc)+1)) || make -j4 || make -j4 V=s
+          echo "::set-output name=status::success"
+          grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
+          [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
+          echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
-        # 以下为定制化固件选项和说明:
-        #
+      - name: If Error
+        if: steps.compile.outcome == 'failure'
+        run: |
+          curl "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" -d "chat_id=${{ secrets.TELEGRAM_CHAT_ID }}&text=Firmware ${{ env.FILE_NAME }} failed to compile."
+          cat openwrt/.config
+          echo '================================================================'
+          cd openwrt && make -j $(($(nproc)+1)) V=s
 
-        #
-        # 有些插件/选项是默认开启的, 如果想要关闭, 请参照以下示例进行编写:
-        # 
-        #          =========================================
-        #         |  # 取消编译VMware镜像:                   |
-        #         |  cat >> .config <<EOF                   |
-        #         |  # CONFIG_VMDK_IMAGES is not set        |
-        #         |  EOF                                    |
-        #          =========================================
-        #
+      - name: Check space usage
+        if: (!cancelled())
+        run: df -hT
 
-        # 
-        # 以下是一些提前准备好的一些插件选项.
-        # 直接取消注释相应代码块即可应用. 不要取消注释代码块上的汉字说明.
-        # 如果不需要代码块里的某一项配置, 只需要删除相应行.
-        #
-        # 如果需要其他插件, 请按照示例自行添加.
-        # 注意, 只需添加依赖链顶端的包. 如果你需要插件 A, 同时 A 依赖 B, 即只需要添加 A.
-        # 
-        # 无论你想要对固件进行怎样的定制, 都需要且只需要修改 EOF 回环内的内容.
-        # 
+      - name: Upload bin directory
+        uses: actions/upload-artifact@main
+        if: steps.compile.outputs.status == 'success' && env.UPLOAD_BIN_DIR == 'true'
+        with:
+          name: OpenWrt_bin${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+          path: openwrt/bin
 
-        # 编译竞斗云固件:
-        cat >> .config <<EOF
-        CONFIG_TARGET_ipq40xx=y
-        CONFIG_TARGET_ipq40xx_generic=y
-        CONFIG_TARGET_ipq40xx_generic_DEVICE_p2w_r619ac-128m=y
-        EOF
+      - name: Organize files
+        id: organize
+        if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
+        run: |
+          cd openwrt/bin/targets/*/*
+          rm -rf packages
+          echo "FIRMWARE=$PWD" >> $GITHUB_ENV
+          echo "::set-output name=status::success"
 
-        # USB2.0支持:
-        # cat >> .config <<EOF
-        # CONFIG_PACKAGE_kmod-usb-core=y
-        # CONFIG_PACKAGE_kmod-usb-dwc3=y
-        # CONFIG_PACKAGE_kmod-usb-dwc3-qcom=y
-        # CONFIG_PACKAGE_kmod-usb-storage=y
-        # CONFIG_PACKAGE_kmod-usb-storage-extras=y
-        # CONFIG_PACKAGE_kmod-usb-storage-uas=y
-        # CONFIG_PACKAGE_kmod-usb-xhci-hcd=y
-        # CONFIG_PACKAGE_kmod-usb3=y
-        # EOF
+      - name: Upload firmware directory
+        uses: actions/upload-artifact@main
+        if: steps.organize.outputs.status == 'success' && !cancelled()
+        with:
+          name: IMM23.05-${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
+          path: ${{ env.FIRMWARE }}
 
-        # IPv6支持:
-        cat >> .config <<EOF
-        CONFIG_PACKAGE_dnsmasq_full_dhcpv6=y
-        CONFIG_PACKAGE_ip6tables=y
-        CONFIG_PACKAGE_ip6tables-extra=y
-        CONFIG_PACKAGE_ip6tables-mod-nat=y
-        CONFIG_PACKAGE_ipv6helper=y
-        EOF
+      - name: Generate release tag
+        id: tag
+        if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+        run: |
+          touch release.txt
+          echo "R619AC-IMM23.05-1" >> release.txt
+          echo "::set-output name=release_tag::$(date +"%Y.%m.%d")"
+          echo "::set-output name=status::success"
 
-        # LuCI插件选择:
-        cat >> .config <<EOF
-        # CONFIG_PACKAGE_luci-app-adguardhome=y
-        CONFIG_PACKAGE_luci-app-argon-config=y
-        # CONFIG_PACKAGE_luci-app-autoreboot=y
-        # CONFIG_PACKAGE_luci-app-ddns=y
-        CONFIG_PACKAGE_luci-app-firewall=y
-        # CONFIG_PACKAGE_luci-app-filetransfer=y
-        CONFIG_PACKAGE_luci-app-mosdns=y
-        CONFIG_PACKAGE_luci-app-openclash=y
-        # CONFIG_PACKAGE_luci-app-passwall=y
-        # CONFIG_PACKAGE_luci-app-pushbot=y
-        # CONFIG_PACKAGE_luci-app-ramfree=y
-        # CONFIG_PACKAGE_luci-app-samba4=y
-        # CONFIG_PACKAGE_luci-app-ssr-plus=y
-        # CONFIG_PACKAGE_luci-app-ssr-plus_INCLUDE_Xray=y
-        CONFIG_PACKAGE_luci-app-smartdns=y
-        # CONFIG_PACKAGE_luci-app-sqm=y
-        CONFIG_PACKAGE_luci-app-ttyd=y
-        CONFIG_PACKAGE_luci-app-upnp=y
-        # CONFIG_PACKAGE_luci-app-vsftpd=y
-        CONFIG_PACKAGE_luci-app-vlmcsd=y
-        CONFIG_PACKAGE_luci-app-wol=y
-        # CONFIG_PACKAGE_luci-app-zerotier=y
-        CONFIG_PACKAGE_luci-app-iptvhelper=y
-        CONFIG_PACKAGE_luci-app-onliner=y
-        CONFIG_PACKAGE_luci-app-opkg=y
-        
-        EOF
+      - name: Upload firmware to release
+        uses: softprops/action-gh-release@v1
+        if: steps.tag.outputs.status == 'success' && !cancelled()
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.tag.outputs.release_tag }}
+          body_path: release.txt
+          files: ${{ env.FIRMWARE }}/*
 
-        # LuCI主题:
-        cat >> .config <<EOF
-        CONFIG_PACKAGE_luci-theme-argon=y
-        EOF
-
-        # 常用软件包:
-        cat >> .config <<EOF
-        # CONFIG_PACKAGE_autocore=y
-        CONFIG_PACKAGE_my-default-settings=y
-        EOF
-
-        # 取消编译VMware镜像以及镜像填充 (不要删除被缩进的注释符号):
-        # cat >> .config <<EOF
-        # # CONFIG_TARGET_IMAGES_PAD is not set
-        # # CONFIG_VMDK_IMAGES is not set
-        # EOF
-
-        # 
-        # ========================固件定制部分结束========================
-        # 
-        
-        sed -i 's/^[ \t]*//g' ./.config
-        make defconfig
-
-    - name: SSH connection to Actions
-      uses: P3TERX/ssh2actions@v1.0.0
-      if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
-      env:
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-
-    - name: Download package
-      id: package
-      run: |
-        cd openwrt
-        make download -j8
-        find dl -size -1024c -exec ls -l {} \;
-        find dl -size -1024c -exec rm -f {} \;
-
-    - name: Compile the firmware
-      id: compile
-      run: |
-        cd openwrt
-        echo -e "$(nproc) thread compile"
-        make -j$(nproc) || make -j1 || make -j1 V=s
-        echo "::set-output name=status::success"
-        grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
-        [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
-        echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
-
-    - name: Check space usage
-      if: (!cancelled())
-      run: df -hT
-
-    - name: Organize files
-      id: organize
-      if: env.UPLOAD_FIRMWARE == 'true' && !cancelled()
-      run: |
-        cd $GITHUB_WORKSPACE/openwrt/bin/packages
-        tar -zcvf Packages.tar.gz ./*
-        cp Packages.tar.gz $GITHUB_WORKSPACE/openwrt/bin/targets/*/*
-        cd $GITHUB_WORKSPACE/openwrt/bin/targets/*/*
-        rm -rf packages
-        echo "FIRMWARE=$PWD" >> $GITHUB_ENV
-        echo "::set-output name=status::success"
-        echo "::set-output name=release_tag::$(date +"%Y.%m.%d-%H%M")"
-
-    - name: Calculate MD5
-      run: |
-        cd ${{ env.FIRMWARE }} && rm -rf sha256sums
-        MD5=$(md5sum * | sed ':a;N;$!ba;s/\n/<br>/g')
-        echo "MD5=$MD5" >> $GITHUB_ENV
-
-    - name: Upload firmware directory
-      uses: actions/upload-artifact@main
-      if: steps.organize.outputs.status == 'success' && !cancelled()
-      with:
-        name: OpenWrt_firmware${{ env.DEVICE_NAME }}${{ env.FILE_DATE }}
-        path: ${{ env.FIRMWARE }}
-
-    - name: Upload OpenWrt Firmware to Release
-      id: release
-      uses: ncipollo/release-action@v1
-      if: steps.organize.outputs.status == 'success' && env.UPLOAD_RELEASE == 'true' && !cancelled()
-      with:
-        name: R${{ steps.organize.outputs.release_tag }} for R619AC
-        allowUpdates: true
-        removeArtifacts: true
-        tag: ${{ steps.organize.outputs.release_tag }}
-        commit: main
-        token: ${{ secrets.GITHUB_TOKEN }}
-        artifacts: ${{ env.FIRMWARE }}/*
-        body: |
-          - 默认IP：192.168.1.2
-          - 默认密码：password
-          - 当前使用版本:【编译前的最后一次[➦主源码](${{ env.REPO_URL }})更新记录】
-          - 下载后请仔细校验MD5，如不正确请重新下载
-          ${{ env.useVersionInfo }}
-          
-          `md5sum`
-          > ${{ env.MD5 }}
-
-    - name: Delete workflow runs
-      uses: GitRML/delete-workflow-runs@main
-      with:
-        retain_days: 1
-        keep_minimum_runs: 3
-
-    - name: Remove old Releases
-      uses: dev-drprasad/delete-older-releases@v0.1.0
-      if: env.UPLOAD_RELEASE == 'true' && !cancelled()
-      with:
-        keep_latest: 3
-        delete_tags: true
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Remove old Releases
+        uses: dev-drprasad/delete-older-releases@v0.1.0
+        if: env.UPLOAD_RELEASE == 'true' && !cancelled()
+        with:
+          keep_latest: 3
+          delete_tags: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
