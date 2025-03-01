@@ -23,7 +23,7 @@ on:
 env:
   REPO_URL: https://github.com/VIKINGYFY/immortalwrt
   REPO_BRANCH: main
-  FEEDS_CONF: feeds.conf.default
+  FEEDS_CONF: 24.10feeds.conf.default
   CONFIG_FILE: a.config
   DIY_P1_SH: 23.05diy-1.sh
   DIY_P2_SH: 23.05diy-2.sh
